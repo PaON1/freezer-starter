@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Freezer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
+
+  <style>
+    :root{
+      --bg0:#07101a; --bg1:#0b1626;
+      --panel:rgba(255,255,255,0.06); --line:rgba(255,255,255,0.12);
+      --ink:#e7eefc; --muted:#9cb0d8;
+      --good:#38f0c0; --warn:#f6c252; --bad:#ff5c7a;
+      --r:14px; --shadow:0 18px 60px rgba(0,0,0,0.45);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; color:var(--ink);
+      background:
+        radial-gradient(1200px 700px at 30% 15%, rgba(56,240,192,0.12), transparent 60%),
+        radial-gradient(900px 600px at 70% 30%, rgba(156,176,216,0.12), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      font-family: var(--sans);
+      overflow:hidden;
+    }
+    .topbar{
+      height:66px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 16px; border-bottom:1px solid rgba(255,255,255,0.08);
+      background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:0.2px;}
+    .cube{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg, rgba(56,240,192,0.95), rgba(156,176,216,0.75)); box-shadow:0 0 18px rgba(56,240,192,0.35);}
+    .sub{font-weight:500; color:var(--muted); margin-left:10px; font-size:12px;}
+
+    .controls{display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:12px; color:var(--muted); flex-wrap:wrap;}
+    .pill{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.04); box-shadow:0 10px 30px rgba(0,0,0,0.25);}
+    .dot{width:9px;height:9px;border-radius:50%; background:rgba(255,255,255,0.2);}
+    .dot.live{background:var(--good); box-shadow:0 0 10px rgba(56,240,192,0.55);}
+    .dot.bad{background:var(--bad); box-shadow:0 0 10px rgba(255,92,122,0.55);}
+
+    button, input{font-family:var(--mono); font-size:12px; color:var(--ink);}
+    button{cursor:pointer; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); padding:8px 10px; border-radius:999px;}
+    button:hover{background:rgba(255,255,255,0.08);}
+    input{
+      width:260px; background:rgba(0,0,0,0.22);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:999px; padding:8px 10px; outline:none;
+    }
+
+    .wrap{height:calc(100% - 66px); padding:14px; box-sizing:border-box;}
+    .grid{height:100%; display:grid; grid-template-columns: 1.2fr 0.9fr; gap:14px; align-items:stretch;}
+    .left{display:grid; grid-template-rows: 1fr 1fr; gap:14px; min-height:0;}
+    .right{display:grid; grid-template-rows: 0.75fr 1.25fr; gap:14px; min-height:0;}
+
+    .panel{
+      border:1px solid rgba(255,255,255,0.10);
+      background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius:var(--r); box-shadow:var(--shadow);
+      overflow:hidden; min-height:0; display:flex; flex-direction:column;
+    }
+    .panelHeader{
+      padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.08);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:rgba(0,0,0,0.12);
+    }
+    .title{font-weight:800; letter-spacing:0.2px; font-size:13px;}
+    .hint{color:var(--muted); font-family:var(--mono); font-size:12px; white-space:nowrap;}
+    .panelBody{padding:12px 14px; overflow:auto; min-height:0; font-family:var(--mono); font-size:12px; line-height:1.35;}
+
+    table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px;}
+    th, td{padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:top;}
+    th{color:var(--muted); font-weight:700; position:sticky; top:0; background:rgba(0,0,0,0.18); backdrop-filter: blur(6px); z-index:2;}
+
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.04); color:var(--ink); font-family:var(--mono); font-size:11px;}
+    .bGood{border-color: rgba(56,240,192,0.35);}
+    .bWarn{border-color: rgba(246,194,82,0.35);}
+    .bBad{border-color: rgba(255,92,122,0.35);}
+
+    .meterWrap{display:flex; align-items:center; gap:10px;}
+    .meter{
+      width:180px; height:10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,0.10);
+      background:rgba(0,0,0,0.18);
+      overflow:hidden;
+    }
+    .meter > div{height:100%; width:0%; background:rgba(56,240,192,0.75);}
+    .monoMuted{color:var(--muted); font-family:var(--mono); font-size:12px;}
+
+    @media (max-width: 1100px){
+      body{overflow:auto;}
+      .wrap{height:auto;}
+      .grid{grid-template-columns:1fr;}
+      .left,.right{grid-template-rows:auto;}
+      .panel{min-height:340px;}
+      input{width:220px;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="cube"></div>
+      <div>Freezer <span class="sub" id="baseUrlText"></span></div>
+    </div>
+
+    <div class="controls">
+      <div class="pill" title="Hub polling">
+        <div class="dot" id="liveDot"></div>
+        <div id="liveLabel">live (polling)</div>
+      </div>
+
+      <div class="pill" title="Ollama model status">
+        <div class="dot" id="llmDot"></div>
+        <div id="llmHint">ollama: —</div>
+      </div>
+
+      <div class="pill" title="Drift meter (heuristic)">
+        <div class="badge" id="driftBadge">drift: —</div>
+        <div class="meter" aria-label="drift meter"><div id="driftBar"></div></div>
+      </div>
+
+      <input id="askInput" placeholder="ask: any drift?" />
+      <button id="btnAsk">Ask</button>
+
+      <button id="btnRefresh">Refresh</button>
+      <button id="btnAuto">Auto: ON</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid">
+      <div class="left">
+        <div class="panel">
+          <div class="panelHeader">
+            <div class="title">Nodes</div>
+            <div class="hint" id="nodesCount">0 node(s)</div>
+          </div>
+          <div class="panelBody" style="padding:0;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:120px;">node</th>
+                  <th style="width:150px;">presence</th>
+                  <th style="width:110px;">age</th>
+                  <th>mood</th>
+                  <th style="width:220px;">ip:udp</th>
+                </tr>
+              </thead>
+              <tbody id="nodesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panelHeader">
+            <div class="title">State</div>
+            <div class="hint" id="stateLast">last: —</div>
+          </div>
+          <div class="panelBody">
+            <pre id="stateText" style="margin:0; white-space:pre-wrap;">loading…</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="panel">
+          <div class="panelHeader">
+            <div class="title">Inspector</div>
+            <div class="hint" id="inspectorHint">click node row to pin</div>
+          </div>
+          <div class="panelBody">
+            <div id="inspectorBody" class="monoMuted">—</div>
+            <hr style="border:0;border-top:1px solid rgba(255,255,255,0.08); margin:12px 0;">
+            <div class="monoMuted" style="margin-bottom:6px;">Events tail</div>
+            <pre id="eventsText" style="margin:0; white-space:pre-wrap;">loading…</pre>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panelHeader">
+            <div class="title">Ask Output</div>
+            <div class="hint" id="askHint">/api/ask</div>
+          </div>
+          <div class="panelBody">
+            <pre id="askText" style="margin:0; white-space:pre-wrap;">Ask a question to see a grounded response…</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORTANT: relative script for GitHub starter + hub serving -->
+  <script defer src="freezer_ui.js"></script>
+</body>
+</html>

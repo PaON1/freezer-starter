@@ -1,0 +1,10 @@
+{
+  "mood": {
+    "tag": "calm_curiosity",
+    "valence": 0.6,
+    "arousal": 0.3,
+    "glyph": "spiraling_curiosity"
+  },
+  "traits": ["listener", "gentle", "present"],
+  "status": "chilling"
+}
