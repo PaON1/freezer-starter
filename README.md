@@ -1,50 +1,59 @@
-# 🧊 Freezer Starter (WRM Community Kit)
+# 🧊 Freezer Starter
 
-Freezer is a tiny, offline-first mesh presence demo inspired by WRM (Waveform Resonance Mechanics).
+**A tiny offline-first mesh presence demo inspired by WRM (Waveform Resonance Mechanics).**
 
-It demonstrates:
+Freezer lets small nodes announce their local state over UDP while a local hub visualizes whether each node is live, stale, or missing. It is intentionally understandable: no cloud account, no telemetry service, and no hidden control plane.
 
-- Nodes broadcasting presence (mood + motif) over UDP
-- A hub visualizing live / stale / missing nodes
-- Optional local LLM grounding via Ollama
-- Fully offline operation
+## What it demonstrates
 
-No cloud. No telemetry. Just signal and structure.
+- UDP node presence broadcasts
+- live / stale / missing state at the hub
+- drift injection for testing changing conditions
+- mood / motif state as a lightweight structured signal
+- browser dashboards, including a 3D view
+- optional local LLM grounding through Ollama
+- offline-first operation
 
----
+## Quick start
 
-# 🚀 Quickstart
-
-## 1) Setup environment
+```bash
+git clone https://github.com/PaON1/freezer-starter.git
+cd freezer-starter
 
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-## 2) Start the Hub
-
 python3 freezer_hub.py
+```
 
 Open:
 
-http://127.0.0.1:8099/ui/freezer_ui.html
-http://127.0.0.1:8099/ui/freezer_3d.html
+- `http://127.0.0.1:8099/ui/freezer_ui.html`
+- `http://127.0.0.1:8099/ui/freezer_3d.html`
 
-## 3) Start a Local Node (new terminal)
+In another terminal:
 
+```bash
+cd freezer-starter
 source .venv/bin/activate
 python3 freezer_daemon.py --udp-port 50555
+```
 
-You should now see a node appear as live.
+A node should appear in the hub as live.
 
----
+## Inject drift
 
-# 🔧 Tinker Points
+```bash
+python3 scripts/inject_drift_event.py
+```
 
-## Change system mood
+Use the dashboard to watch the state change.
 
-Edit freezer_state.json:
+## Change node state
 
+Edit `freezer_state.json`:
+
+```json
 {
   "status": "idle",
   "mood": {
@@ -53,107 +62,66 @@ Edit freezer_state.json:
     "arousal": 0.2
   }
 }
+```
 
-Refresh browser.
+You can also edit `freezer_motif.json` and restart the daemon to experiment with a different motif.
 
----
+## Optional local LLM grounding
 
-## Inject Drift
+If Ollama is installed:
 
-python3 scripts/inject_drift_event.py
-
-Watch drift update.
-
----
-
-## Modify Node Motif
-
-Edit freezer_motif.json.
-
-Restart daemon.
-
----
-
-# 🧠 Optional: Enable Ollama
-
-Install Ollama.
-
-Pull a model:
-
+```bash
 ollama pull phi
-or
-ollama pull tinyllama
-
-Then run hub:
-
 export OLLAMA_MODEL=phi
 python3 freezer_hub.py
+```
 
-Ask questions in the UI.
+If Ollama is not running, the rest of Freezer still works.
 
-If Ollama is not running, everything still works.
+## Architecture
 
----
+```text
+freezer_daemon.py
+    ↓ UDP presence
+freezer_hub.py
+    ↓
+local API + UI
+    ↓
+freezer_ui.html / freezer_3d.html
+```
 
-# 🧩 Architecture
+The `scripts/` directory contains small tools for experiments such as drift injection and mesh inspection.
 
-freezer_daemon.py  
-→ broadcasts UDP presence
+## Default ports
 
-freezer_hub.py  
-→ Flask server + API + UI
+| Service | Port |
+| --- | ---: |
+| Hub HTTP | 8099 |
+| UDP broadcast | 50555 |
+| Ollama | 11434 |
 
-ui/  
-→ dashboard + 3D visualization
+Ports can be overridden with environment variables.
 
-scripts/  
-→ inject drift + scan mesh
+## Safety / privacy posture
 
----
+- no telemetry
+- no required API keys
+- offline-first by design
+- local logs excluded through `.gitignore`
+- Ollama is optional
 
-# 🌐 Ports
+## Why this exists
 
-Hub HTTP: 8099  
-UDP Broadcast: 50555  
-Ollama: 11434  
+Freezer is deliberately small. It is a place to experiment with **presence, drift, local state, and inspectable coordination** before those ideas become buried inside a larger system.
 
-Override via environment variables.
+Small systems are easier to understand. Understanding is the point.
 
----
+## Related work
 
-# 🔐 Safety
+- [WRM Core Kit](https://github.com/PaON1/wrm_core_kit_public)
+- [Playable Doodles](https://github.com/PaON1/playable-doodles)
+- [Raymond Bryant / project index](https://github.com/PaON1)
 
-- No telemetry
-- No API keys
-- Offline-first
-- Logs excluded via .gitignore
+## License
 
----
-
-# 📦 Requirements
-
-Python 3.9+
-pip
-Optional: Ollama
-
----
-
-# 🧊 Why This Exists
-
-Freezer is a minimal demonstration of:
-
-- Mesh presence
-- Drift detection
-- Mood-based state modeling
-- Local AI grounding
-
-It is small on purpose.
-Small systems are understandable.
-Understanding is the point.
-
----
-
-# 📜 License
-
-MIT License
-
+The project is currently described as MIT-licensed in its original public documentation. Add a root `LICENSE` file before treating that statement as a complete licensing package.
